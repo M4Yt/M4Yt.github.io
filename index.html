@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Moving on from jQuery selectors</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+	    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+    </head>
+    <body class="bg-faded">
+        <nav class="navbar navbar-inverse bg-inverse">
+            <div class="container">
+                <h1 class="navbar-brand" href="#">M4Y</h1>
+            </div>
+        </nav>
+
+        <div class="container">
+            <br />
+            <div class="card">
+                <div class="card-block">
+                    <div class="container">
+                        <h1>Moving on from jQuery selectors</h1><br />
+                        <p>
+                            jQuery's selectors are probably one of the most used features of the library.
+                            They are easy to use and quite powerful. What they are not, is fast.
+                            So what is the vanilla javascript alternative?
+                            You're probably sick of typing out <code>.getElementById()</code> and <code>.getElementsByClassName()</code>, understandable.
+                            Now vanilla javascript has an answer with <code>.querySelector()</code> and <code>.querySelectorAll()</code>.
+                            You can use your CSS selectors in there just like you would with jQuery. So what does it look like?
+                        </p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h3>jQuery</h3>
+<pre class="bg-faded p-1 rounded prettyprint lang-js"><code>$("body");</code></pre>
+                            </div><!-- end col -->
+                            <div class="col-md-6">
+                                <h3>Vanilla</h3>
+<pre class="bg-faded p-1 rounded prettyprint lang-js"><code>document.querySelector("body");</code></pre>
+                            </div><!-- end col -->
+                        </div><!-- end row -->
+                        <p>
+                            So you might be thinking:
+                            "Okay, sweet! So I'll just replace the <code>$</code> with <code>document.querySelector</code> in my code
+                            and everything will be faster!". If only it were that easy...
+                            Now to most people reading this it's probably already obvious why. It's the reason why there's 2 functions.
+                            <code>.querySelector()</code> and <code>.querySelectorAll()</code>. It's all about the return types.
+                            So let me show you what these functions return.
+                        </p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h3>jQuery</h3>
+<pre class="bg-faded p-1 rounded prettyprint lang-js"><code>// First let's select the body, there should be only one
+
+$("body");
+// This returns a jQuery object
+
+// Now let's select the divs, there should be multiple
+
+$("div");
+// This also returns a jQuery object
+</code></pre>
+                            </div><!-- end col -->
+                            <div class="col-md-6">
+                                <h3>Vanilla</h3>
+<pre class="bg-faded p-1 rounded prettyprint lang-js"><code>// Let's start with selecting the body again
+
+document.querySelector("body");
+// This returns the body element
+
+// Now let's throw the divs in that query
+
+document.querySelector("div");
+// This returns 1 div element, the first one
+
+// We use the other function to get all elements
+
+document.querySelectAll("div");
+// This returns all the div elements in an array-like object</code></pre>
+                            </div><!-- end col -->
+                        </div><!-- end row -->
+                        <p>
+                            So there's our first problem. You need to know in advance if you're selecting one or more elements.
+                            But we could just write a quick utility function where it doesn't matter anymore, right?
+                            Something like this:
+                            <pre class="bg-faded p-1 rounded prettyprint lang-js"><code>function customQuery(query) {
+    let result = document.querySelectorAll(query);
+    if (result.length < 2) {
+        return result[0];
+    } else {
+        return result;
+    }
+}
+
+// Now we can just call this function
+
+customQuery("div");</code></pre>
+                            Fixed? Not quite. This is really bad and fairly useless code. So what happens here?
+                            You just put in your query and it returns one or more elements, that's what you wanted, right?
+                            The problem is once again return types. Because what does this function return?
+                            The answer: it depends. Javascript allows you to this because of it's dynamic typing,
+                            but it's not a very good thing to do.
+                            <ul>
+                                <li>
+                                    <code>$(query);</code> always returns a jQuery object.
+                                </li>
+                                <li>
+                                    <code>document.querySelect(query);</code> always returns an element.
+                                </li>
+                                <li>
+                                    <code>document.querySelectAll(query);</code> always returns an array-like object.
+                                </li>
+                                <li>
+                                    <code>customQuery(query);</code> sometimes returns an element, sometimens an array-like object.
+                                </li>
+                            </ul>
+                            Now, you could go writing your own jQuery-like functions, that can take in either those elements
+                            or array-like objects, but that still leaves you with problems.
+                            Even if you recommend people to use your own custom functions, they can still decide to use vanilla functions.
+                            They'll be able to use <code>customQuery("div").innerHTML()</code> sometimes, if it happens to return an element,
+                            but if it doesn't, things go wrong. Darn. How do we solve this?
+                            Should we make our <code>customQuery()</code> return objects, the same way jQuery does?
+                            That sounds complicated and counterproductive, might as well just use jQuery then. But then what?
+                        </p>
+                        <p>
+                            At this point it's a bit down to opinion, but here is my suggestion:
+                            <ul>
+                                <li>
+                                    <strong>Don't use <code>document.querySelector()</code>.</strong>
+                                    <p>
+                                        This might seem strange, but I think in most cases <code>document.querySelectorAll()</code>
+                                        does what you want. It always returns an array-like object, even if there's only one
+                                        element in there. Just make sure to treat it as an array too, using things like
+                                        <code>.forEach()</code> for example.
+                                    </p>
+                                </li>
+                            </ul>
+                            Now we're left with only 1 more problem. The use of functions you have on jQuery objects.
+                            You can't just call jQuery's <code>addClass()</code> on the returned object.
+                            Now this is where I recommend writing your own custom functions,
+                            as you're likely not using every single jQuery function anyway.
+                            You won't be able to call these functions directly on your objects, however.
+                            I will write an example of a function that emulates the functionality of <code>addClass()</code>,
+                            that function will take in the object and the name of the class you want to add. <br />
+                        </p>
+                        <pre class="bg-faded p-1 rounded prettyprint lang-js"><code>function addClassToElements(queryObject, className) {
+    queryObject.forEach((element) => {
+        element.classList.add(className);
+    });
+}
+
+// Now we are going to add the class "custom" to every div using this function
+
+var alldivs = document.querySelectorAll("div");
+addClassToElements(alldivs, "custom");</code></pre>
+                        <h3>Tips</h3>
+                        <p>
+                            I think at this point I've given you everything you need to get started replacing your jQuery selectors.
+                            I walked you through some mistakes I made the first time, so you don't have to.
+                            There are definitely some more things you can do though, so here are some tips.
+                            <ul>
+                                <li>
+                                    You can not only call <code>.querySelectorAll()</code> on document, but also other elements.
+                                </li>
+                                <li>
+                                    Learn more about these and other Javascript functions on <a href="https://developer.mozilla.org/en-US/">MDN</a>
+                                </li>
+                                <li>
+                                    Learn how to write some jQuery functions in vanilla Javascript on <a href="http://youmightnotneedjquery.com/">youmightnotneedjquery.com</a>
+                                </li>
+                            </ul>
+                        </p>
+                        <p>
+                            I hope this article could help you start writing some great new Javascript. Feedback is always appreciated.
+                        </p>
+                    </div>
+                </div>
+            </div><!-- end card -->
+            <br />
+        </div>
+        <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+        <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+        <script src="hi.js"></script>
+    </body>
+</html>
